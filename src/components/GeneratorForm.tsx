@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Wand2, Loader2 } from "lucide-react";
+import { generateWebsiteHTML } from "@/utils/generator";
 
 const websiteTypes = [
   { value: "business", label: "Business" },
@@ -40,6 +41,7 @@ const GeneratorForm = () => {
   const [prompt, setPrompt] = useState("");
   const [websiteType, setWebsiteType] = useState("business");
   const [colorScheme, setColorScheme] = useState("purple");
+  const [businessName, setBusinessName] = useState("");
 
   const handleGenerate = () => {
     if (!prompt) {
@@ -52,12 +54,28 @@ const GeneratorForm = () => {
     }
 
     setIsGenerating(true);
-    // Simulate generation process
+    
+    // Generate website HTML
     setTimeout(() => {
+      const websiteHTML = generateWebsiteHTML(prompt, websiteType, colorScheme, businessName);
+      
+      // Create a blob with the HTML content
+      const blob = new Blob([websiteHTML], { type: 'text/html' });
+      
+      // Create a download link and trigger the download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${businessName || 'website'}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
       setIsGenerating(false);
       toast({
         title: "Website generated!",
-        description: "Your custom website is now ready to preview",
+        description: "Your custom website has been downloaded",
       });
     }, 2500);
   };
@@ -152,7 +170,12 @@ const GeneratorForm = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="business-name">Business/Project Name</Label>
-                    <Input id="business-name" placeholder="Enter the name of your business or project" />
+                    <Input 
+                      id="business-name" 
+                      placeholder="Enter the name of your business or project" 
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                    />
                   </div>
                 </TabsContent>
                 

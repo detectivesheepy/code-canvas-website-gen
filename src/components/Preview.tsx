@@ -4,11 +4,41 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, Code, Download, Paintbrush } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const mockupImage = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&auto=format&fit=crop";
 
 const PreviewSection = () => {
   const [activeDevice, setActiveDevice] = useState("desktop");
+  const { toast } = useToast();
+
+  const handleEditDesign = () => {
+    toast({
+      title: "Design Editor",
+      description: "The design editor will be available in a future update.",
+    });
+  };
+
+  const handleViewCode = () => {
+    toast({
+      title: "Code Viewer",
+      description: "The code viewer will be available in a future update.",
+    });
+  };
+
+  const handleExportWebsite = () => {
+    toast({
+      title: "Export Website",
+      description: "Preparing website files for export...",
+    });
+    
+    setTimeout(() => {
+      toast({
+        title: "Download Ready",
+        description: "Your website has been exported successfully.",
+      });
+    }, 1500);
+  };
 
   return (
     <section id="preview" className="py-16 md:py-24 bg-muted/50">
@@ -35,10 +65,10 @@ const PreviewSection = () => {
                   </Button>
                 </div>
                 <div className="flex space-x-1.5">
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toast({ title: "Preview Mode", description: "You are currently in preview mode." })}>
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleViewCode}>
                     <Code className="h-4 w-4" />
                   </Button>
                 </div>
@@ -70,17 +100,17 @@ const PreviewSection = () => {
                   </div>
                   
                   <div className="space-y-4">
-                    <Button variant="outline" className="w-full justify-start">
+                    <Button variant="outline" className="w-full justify-start" onClick={handleEditDesign}>
                       <Paintbrush className="mr-2 h-4 w-4" />
                       Edit Design
                     </Button>
                     
-                    <Button variant="outline" className="w-full justify-start">
+                    <Button variant="outline" className="w-full justify-start" onClick={handleViewCode}>
                       <Code className="mr-2 h-4 w-4" />
                       View Code
                     </Button>
                     
-                    <Button className="w-full justify-start">
+                    <Button className="w-full justify-start" onClick={handleExportWebsite}>
                       <Download className="mr-2 h-4 w-4" />
                       Export Website
                     </Button>

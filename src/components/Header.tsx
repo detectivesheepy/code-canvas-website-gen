@@ -4,6 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 
 const Header = () => {
+  const handleLogin = () => {
+    alert("Login functionality will be implemented in a future update.");
+  };
+
+  const handleGetStarted = () => {
+    // Smooth scroll to generator section
+    document.getElementById('generator')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-md z-50 border-b border-border">
       <div className="container mx-auto flex items-center justify-between py-4">
@@ -17,10 +26,10 @@ const Header = () => {
           <a href="#preview" className="text-muted-foreground hover:text-foreground transition-colors">Preview</a>
         </nav>
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" className="hidden md:inline-flex">
+          <Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={handleLogin}>
             Log in
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={handleGetStarted}>
             Get Started
           </Button>
         </div>
