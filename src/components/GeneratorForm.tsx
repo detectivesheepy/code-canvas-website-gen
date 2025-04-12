@@ -43,7 +43,7 @@ const GeneratorForm = () => {
   const [colorScheme, setColorScheme] = useState("purple");
   const [businessName, setBusinessName] = useState("");
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!prompt) {
       toast({
         title: "Description required",
@@ -54,10 +54,14 @@ const GeneratorForm = () => {
     }
 
     setIsGenerating(true);
+    toast({
+      title: "Generating website",
+      description: "This may take up to 30 seconds...",
+    });
     
-    // Generate website HTML
-    setTimeout(() => {
-      const websiteHTML = generateWebsiteHTML(prompt, websiteType, colorScheme, businessName);
+    try {
+      // Generate website HTML - this is now async
+      const websiteHTML = await generateWebsiteHTML(prompt, websiteType, colorScheme, businessName);
       
       // Create a blob with the HTML content
       const blob = new Blob([websiteHTML], { type: 'text/html' });
@@ -77,7 +81,15 @@ const GeneratorForm = () => {
         title: "Website generated!",
         description: "Your custom website has been downloaded",
       });
-    }, 2500);
+    } catch (error) {
+      console.error("Website generation failed:", error);
+      setIsGenerating(false);
+      toast({
+        title: "Generation failed",
+        description: "There was an error generating your website",
+        variant: "destructive"
+      });
+    }
   };
 
   const useTemplate = (templatePrompt: string) => {

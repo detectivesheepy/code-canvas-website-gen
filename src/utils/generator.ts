@@ -1,18 +1,179 @@
-
 /**
- * Generates a simple HTML website based on user preferences
+ * Generates a website HTML using OpenAI API based on user preferences
  */
-export const generateWebsiteHTML = (
+import { toast } from "@/hooks/use-toast";
+
+export const generateWebsiteHTML = async (
   prompt: string,
   websiteType: string,
   colorScheme: string,
   businessName: string = 'My Website'
+): Promise<string> => {
+  try {
+    // Create the system message with instructions for ChatGPT
+    const systemMessage = `
+      You are a professional web developer who creates clean, responsive HTML websites.
+      Create a single HTML file with inline CSS for a ${websiteType} website with a ${colorScheme} color scheme.
+      The website should be for: ${businessName ? businessName : "a default business"}
+      The HTML should include:
+      - Responsive design that works on mobile and desktop
+      - Modern, clean aesthetics with the ${colorScheme} color scheme
+      - A navigation menu
+      - A compelling hero section
+      - Features/services section
+      - About section
+      - Contact information
+      - Footer with copyright
+      - All CSS should be internal (in the <style> tag)
+      - No external dependencies or libraries
+      
+      Only return valid HTML code with no explanation or additional text.
+    `;
+
+    // Create the user message with the prompt
+    const userMessage = `${prompt}\n\nCreate a complete HTML website based on this description. Remember to use a ${colorScheme} color scheme and make it a ${websiteType} website${businessName ? " for " + businessName : ""}.`;
+
+    // Call the OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + await getOpenAIKey(),
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: systemMessage },
+          { role: 'user', content: userMessage }
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    const generatedHTML = data.choices[0]?.message?.content;
+    
+    if (!generatedHTML) {
+      throw new Error('No content was generated');
+    }
+
+    // Extract the HTML content (in case ChatGPT adds backticks or explanations)
+    let cleanHTML = generatedHTML;
+    // Remove any markdown code block indicators
+    cleanHTML = cleanHTML.replace(/```html/g, '').replace(/```/g, '');
+    
+    return cleanHTML.trim();
+  } catch (error) {
+    console.error('Error generating website:', error);
+    toast({
+      title: "Generation failed",
+      description: `${error instanceof Error ? error.message : "Unknown error occurred"}`,
+      variant: "destructive"
+    });
+    // Return fallback HTML with error message
+    return getFallbackHTML(businessName, prompt, error instanceof Error ? error.message : "Unknown error");
+  }
+};
+
+// Function to get or ask for OpenAI API key
+const getOpenAIKey = async (): Promise<string> => {
+  // Check if API key is in localStorage
+  const storedKey = localStorage.getItem('openai_api_key');
+  if (storedKey) {
+    return storedKey;
+  }
+  
+  // Ask user for API key
+  return new Promise((resolve) => {
+    // Create modal for API key input
+    const modalContainer = document.createElement('div');
+    modalContainer.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+    
+    const modalContent = document.createElement('div');
+    modalContent.className = 'bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full';
+    
+    const heading = document.createElement('h3');
+    heading.className = 'text-lg font-semibold mb-4';
+    heading.textContent = 'Enter OpenAI API Key';
+    
+    const description = document.createElement('p');
+    description.className = 'text-gray-600 dark:text-gray-300 mb-4 text-sm';
+    description.textContent = 'Your API key is needed to generate website content. It will be stored in your browser only.';
+    
+    const input = document.createElement('input');
+    input.type = 'password';
+    input.placeholder = 'sk-...';
+    input.className = 'w-full p-2 border rounded mb-4 dark:bg-gray-700 dark:border-gray-600';
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'flex justify-end space-x-2';
+    
+    const cancelButton = document.createElement('button');
+    cancelButton.className = 'px-4 py-2 border rounded';
+    cancelButton.textContent = 'Cancel';
+    
+    const submitButton = document.createElement('button');
+    submitButton.className = 'px-4 py-2 bg-purple-600 text-white rounded';
+    submitButton.textContent = 'Submit';
+    
+    buttonContainer.appendChild(cancelButton);
+    buttonContainer.appendChild(submitButton);
+    
+    modalContent.appendChild(heading);
+    modalContent.appendChild(description);
+    modalContent.appendChild(input);
+    modalContent.appendChild(buttonContainer);
+    modalContainer.appendChild(modalContent);
+    
+    document.body.appendChild(modalContainer);
+    
+    // Focus the input
+    input.focus();
+    
+    // Handle cancel
+    cancelButton.addEventListener('click', () => {
+      document.body.removeChild(modalContainer);
+      resolve('');
+    });
+    
+    // Handle submit
+    const handleSubmit = () => {
+      const apiKey = input.value.trim();
+      if (apiKey) {
+        localStorage.setItem('openai_api_key', apiKey);
+        document.body.removeChild(modalContainer);
+        resolve(apiKey);
+      } else {
+        input.classList.add('border-red-500');
+      }
+    };
+    
+    submitButton.addEventListener('click', handleSubmit);
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleSubmit();
+      }
+    });
+  });
+};
+
+// Fallback HTML in case of API errors
+const getFallbackHTML = (
+  businessName: string,
+  description: string,
+  errorMessage: string
 ): string => {
   // Get color values based on selected scheme
-  const colors = getColorScheme(colorScheme);
+  const colors = getColorScheme('purple');
   
   // Generate the website title
-  const title = businessName || getWebsiteTitle(websiteType);
+  const title = businessName || getWebsiteTitle('business');
   
   // HTML template for the generated website
   return `
@@ -88,107 +249,17 @@ export const generateWebsiteHTML = (
       padding: 2rem 1rem;
     }
     
-    .hero {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 3rem 1rem;
-    }
-    
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
-      color: var(--primary);
-    }
-    
-    .subtitle {
-      font-size: 1.2rem;
-      margin-bottom: 2rem;
-      color: var(--text);
-      opacity: 0.9;
-      max-width: 700px;
-    }
-    
-    .btn {
-      display: inline-block;
-      background-color: var(--accent);
-      color: white;
-      padding: 0.8rem 1.5rem;
+    .error-container {
+      background-color: #fff1f2;
+      border: 1px solid #fecdd3;
+      padding: 1rem;
       border-radius: 4px;
-      text-decoration: none;
-      font-weight: bold;
-      transition: transform 0.2s, opacity 0.2s;
+      margin: 2rem 0;
     }
-    
-    .btn:hover {
-      transform: translateY(-2px);
-      opacity: 0.9;
-    }
-    
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
-      margin: 3rem 0;
-    }
-    
-    .feature-card {
-      background-color: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s;
-    }
-    
-    .feature-card:hover {
-      transform: translateY(-10px);
-    }
-    
-    .feature-title {
-      font-size: 1.3rem;
-      margin-bottom: 1rem;
-      color: var(--primary);
-    }
-    
-    .content-section {
-      margin: 3rem 0;
-    }
-    
-    h2 {
-      font-size: 2rem;
-      margin-bottom: 1.5rem;
-      color: var(--primary);
-    }
-    
-    footer {
-      background-color: var(--primary);
-      color: white;
-      padding: 2rem 1rem;
-      text-align: center;
-      margin-top: 3rem;
-    }
-    
-    .footer-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    
-    @media (max-width: 768px) {
-      .nav-links {
-        display: none;
-      }
-      
-      h1 {
-        font-size: 2rem;
-      }
-      
-      .subtitle {
-        font-size: 1rem;
-      }
+
+    .error-container h3 {
+      color: #e11d48;
+      margin-bottom: 0.5rem;
     }
   </style>
 </head>
@@ -198,7 +269,6 @@ export const generateWebsiteHTML = (
       <div class="logo">${title}</div>
       <div class="nav-links">
         <a href="#home">Home</a>
-        <a href="#features">Features</a>
         <a href="#about">About</a>
         <a href="#contact">Contact</a>
       </div>
@@ -206,49 +276,18 @@ export const generateWebsiteHTML = (
   </header>
   
   <main>
-    <section id="home" class="hero">
-      <h1>Welcome to ${title}</h1>
-      <p class="subtitle">${prompt}</p>
-      <a href="#contact" class="btn">Get Started</a>
-    </section>
+    <h1>Welcome to ${title}</h1>
+    <p>This website will be about: ${description}</p>
     
-    <section id="features" class="content-section">
-      <h2>Our Features</h2>
-      <div class="features">
-        <div class="feature-card">
-          <h3 class="feature-title">Feature 1</h3>
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque, nunc eget tincidunt efficitur.</p>
-        </div>
-        <div class="feature-card">
-          <h3 class="feature-title">Feature 2</h3>
-          <p>Suspendisse potenti. Cras fringilla ligula vel nisi facilisis, non dictum metus elementum.</p>
-        </div>
-        <div class="feature-card">
-          <h3 class="feature-title">Feature 3</h3>
-          <p>Sed fermentum massa nec neque convallis, at dictum neque venenatis. Duis placerat leo ac elit pharetra.</p>
-        </div>
-      </div>
-    </section>
-    
-    <section id="about" class="content-section">
-      <h2>About Us</h2>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. In hac habitasse platea dictumst. Suspendisse potenti. Cras fringilla ligula vel nisi facilisis, non dictum metus elementum. Sed fermentum massa nec neque convallis, at dictum neque venenatis. Duis placerat leo ac elit pharetra, in commodo neque dictum.</p>
-      <p>Nullam scelerisque, nunc eget tincidunt efficitur, nisl magna blandit eros, in commodo neque dictum ac. Suspendisse potenti. Cras fringilla ligula vel nisi facilisis, non dictum metus elementum.</p>
-    </section>
-    
-    <section id="contact" class="content-section">
-      <h2>Contact Us</h2>
-      <p>We'd love to hear from you! Reach out to us using the information below.</p>
-      <div style="margin-top: 1.5rem;">
-        <p><strong>Email:</strong> info@${title.toLowerCase().replace(/\s+/g, '')}.com</p>
-        <p><strong>Phone:</strong> (123) 456-7890</p>
-        <p><strong>Address:</strong> 123 Website St, Internet City</p>
-      </div>
-    </section>
+    <div class="error-container">
+      <h3>Error during generation</h3>
+      <p>${errorMessage}</p>
+      <p>Please try again or use a different prompt.</p>
+    </div>
   </main>
   
   <footer>
-    <div class="footer-content">
+    <div style="text-align: center; padding: 1rem; background-color: var(--primary); color: white;">
       <p>&copy; ${new Date().getFullYear()} ${title}. All rights reserved.</p>
       <p>Generated by CodeCanvas AI Website Generator</p>
     </div>
