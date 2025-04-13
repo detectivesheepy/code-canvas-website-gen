@@ -1,5 +1,6 @@
+
 /**
- * Generates a website HTML using Deepseek AI API based on user preferences
+ * Generates a website HTML using OpenAI API based on user preferences
  */
 import { toast } from "@/hooks/use-toast";
 
@@ -7,10 +8,16 @@ export const generateWebsiteHTML = async (
   prompt: string,
   websiteType: string,
   colorScheme: string,
-  businessName: string = 'My Website'
+  businessName: string = 'My Website',
+  apiKey: string  // Added API key parameter
 ): Promise<string> => {
   try {
-    // Create the system message with instructions for Deepseek
+    // Validate API key
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('Please provide a valid OpenAI API key');
+    }
+
+    // Create the system message with instructions for OpenAI
     const systemMessage = `
       You are a professional web developer who creates clean, responsive HTML websites.
       Create a single HTML file with inline CSS for a ${websiteType} website with a ${colorScheme} color scheme.
@@ -33,15 +40,15 @@ export const generateWebsiteHTML = async (
     // Create the user message with the prompt
     const userMessage = `${prompt}\n\nCreate a complete HTML website based on this description. Remember to use a ${colorScheme} color scheme and make it a ${websiteType} website${businessName ? " for " + businessName : ""}.`;
 
-    // Call the Deepseek API
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    // Call the OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer sk-d4d4ecb485aa42838910dbc32b1b0496',
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model: 'gpt-3.5-turbo',
         messages: [
           { role: 'system', content: systemMessage },
           { role: 'user', content: userMessage }
@@ -63,7 +70,7 @@ export const generateWebsiteHTML = async (
       throw new Error('No content was generated');
     }
 
-    // Extract the HTML content (in case Deepseek adds backticks or explanations)
+    // Extract the HTML content (in case OpenAI adds backticks or explanations)
     let cleanHTML = generatedHTML;
     // Remove any markdown code block indicators
     cleanHTML = cleanHTML.replace(/```html/g, '').replace(/```/g, '');

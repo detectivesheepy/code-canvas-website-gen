@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Wand2, Loader2, Sparkles } from "lucide-react";
+import { Wand2, Loader2, Sparkles, Key } from "lucide-react";
 import { generateWebsiteHTML } from "@/utils/generator";
 
 const websiteTypes = [
@@ -42,6 +42,7 @@ const GeneratorForm = () => {
   const [websiteType, setWebsiteType] = useState("business");
   const [colorScheme, setColorScheme] = useState("purple");
   const [businessName, setBusinessName] = useState("");
+  const [apiKey, setApiKey] = useState("");
 
   const handleGenerate = async () => {
     if (!prompt) {
@@ -53,15 +54,24 @@ const GeneratorForm = () => {
       return;
     }
 
+    if (!apiKey) {
+      toast({
+        title: "API Key required",
+        description: "Please enter your OpenAI API key",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsGenerating(true);
     toast({
-      title: "Generating website with Deepseek AI",
+      title: "Generating website with OpenAI",
       description: "This may take up to 30 seconds...",
     });
     
     try {
-      // Generate website HTML - using Deepseek AI now
-      const websiteHTML = await generateWebsiteHTML(prompt, websiteType, colorScheme, businessName);
+      // Generate website HTML - using OpenAI now
+      const websiteHTML = await generateWebsiteHTML(prompt, websiteType, colorScheme, businessName, apiKey);
       
       // Create a blob with the HTML content
       const blob = new Blob([websiteHTML], { type: 'text/html' });
@@ -146,6 +156,24 @@ const GeneratorForm = () => {
                     ))}
                   </div>
                 </div>
+                
+                <div className="space-y-2 border-t border-border pt-4 mt-4">
+                  <Label htmlFor="api-key" className="flex items-center gap-2">
+                    <Key className="h-4 w-4" />
+                    OpenAI API Key
+                  </Label>
+                  <Input
+                    id="api-key"
+                    type="password"
+                    placeholder="Enter your OpenAI API key"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Your API key is used only for this request and is never stored.
+                  </p>
+                </div>
               </TabsContent>
               
               <TabsContent value="advanced" className="space-y-4">
@@ -191,6 +219,24 @@ const GeneratorForm = () => {
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
                   />
+                </div>
+                
+                <div className="space-y-2 border-t border-border pt-4 mt-4">
+                  <Label htmlFor="advanced-api-key" className="flex items-center gap-2">
+                    <Key className="h-4 w-4" />
+                    OpenAI API Key
+                  </Label>
+                  <Input
+                    id="advanced-api-key"
+                    type="password"
+                    placeholder="Enter your OpenAI API key"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Your API key is used only for this request and is never stored.
+                  </p>
                 </div>
               </TabsContent>
               
