@@ -55,12 +55,12 @@ const GeneratorForm = () => {
 
     setIsGenerating(true);
     toast({
-      title: "Generating website",
+      title: "Generating website with Deepseek AI",
       description: "This may take up to 30 seconds...",
     });
     
     try {
-      // Generate website HTML - this is now async
+      // Generate website HTML - using Deepseek AI now
       const websiteHTML = await generateWebsiteHTML(prompt, websiteType, colorScheme, businessName);
       
       // Create a blob with the HTML content

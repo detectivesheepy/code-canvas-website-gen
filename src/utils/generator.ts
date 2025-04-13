@@ -1,5 +1,5 @@
 /**
- * Generates a website HTML using OpenAI API based on user preferences
+ * Generates a website HTML using Deepseek AI API based on user preferences
  */
 import { toast } from "@/hooks/use-toast";
 
@@ -10,7 +10,7 @@ export const generateWebsiteHTML = async (
   businessName: string = 'My Website'
 ): Promise<string> => {
   try {
-    // Create the system message with instructions for ChatGPT
+    // Create the system message with instructions for Deepseek
     const systemMessage = `
       You are a professional web developer who creates clean, responsive HTML websites.
       Create a single HTML file with inline CSS for a ${websiteType} website with a ${colorScheme} color scheme.
@@ -33,15 +33,15 @@ export const generateWebsiteHTML = async (
     // Create the user message with the prompt
     const userMessage = `${prompt}\n\nCreate a complete HTML website based on this description. Remember to use a ${colorScheme} color scheme and make it a ${websiteType} website${businessName ? " for " + businessName : ""}.`;
 
-    // Call the OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call the Deepseek API
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + await getOpenAIKey(),
+        'Authorization': 'Bearer sk-d4d4ecb485aa42838910dbc32b1b0496',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'deepseek-chat',
         messages: [
           { role: 'system', content: systemMessage },
           { role: 'user', content: userMessage }
@@ -63,7 +63,7 @@ export const generateWebsiteHTML = async (
       throw new Error('No content was generated');
     }
 
-    // Extract the HTML content (in case ChatGPT adds backticks or explanations)
+    // Extract the HTML content (in case Deepseek adds backticks or explanations)
     let cleanHTML = generatedHTML;
     // Remove any markdown code block indicators
     cleanHTML = cleanHTML.replace(/```html/g, '').replace(/```/g, '');
@@ -79,88 +79,6 @@ export const generateWebsiteHTML = async (
     // Return fallback HTML with error message
     return getFallbackHTML(businessName, prompt, error instanceof Error ? error.message : "Unknown error");
   }
-};
-
-// Function to get or ask for OpenAI API key
-const getOpenAIKey = async (): Promise<string> => {
-  // Check if API key is in localStorage
-  const storedKey = localStorage.getItem('openai_api_key');
-  if (storedKey) {
-    return storedKey;
-  }
-  
-  // Ask user for API key
-  return new Promise((resolve) => {
-    // Create modal for API key input
-    const modalContainer = document.createElement('div');
-    modalContainer.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
-    
-    const modalContent = document.createElement('div');
-    modalContent.className = 'bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full';
-    
-    const heading = document.createElement('h3');
-    heading.className = 'text-lg font-semibold mb-4';
-    heading.textContent = 'Enter OpenAI API Key';
-    
-    const description = document.createElement('p');
-    description.className = 'text-gray-600 dark:text-gray-300 mb-4 text-sm';
-    description.textContent = 'Your API key is needed to generate website content. It will be stored in your browser only.';
-    
-    const input = document.createElement('input');
-    input.type = 'password';
-    input.placeholder = 'sk-...';
-    input.className = 'w-full p-2 border rounded mb-4 dark:bg-gray-700 dark:border-gray-600';
-    
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'flex justify-end space-x-2';
-    
-    const cancelButton = document.createElement('button');
-    cancelButton.className = 'px-4 py-2 border rounded';
-    cancelButton.textContent = 'Cancel';
-    
-    const submitButton = document.createElement('button');
-    submitButton.className = 'px-4 py-2 bg-purple-600 text-white rounded';
-    submitButton.textContent = 'Submit';
-    
-    buttonContainer.appendChild(cancelButton);
-    buttonContainer.appendChild(submitButton);
-    
-    modalContent.appendChild(heading);
-    modalContent.appendChild(description);
-    modalContent.appendChild(input);
-    modalContent.appendChild(buttonContainer);
-    modalContainer.appendChild(modalContent);
-    
-    document.body.appendChild(modalContainer);
-    
-    // Focus the input
-    input.focus();
-    
-    // Handle cancel
-    cancelButton.addEventListener('click', () => {
-      document.body.removeChild(modalContainer);
-      resolve('');
-    });
-    
-    // Handle submit
-    const handleSubmit = () => {
-      const apiKey = input.value.trim();
-      if (apiKey) {
-        localStorage.setItem('openai_api_key', apiKey);
-        document.body.removeChild(modalContainer);
-        resolve(apiKey);
-      } else {
-        input.classList.add('border-red-500');
-      }
-    };
-    
-    submitButton.addEventListener('click', handleSubmit);
-    input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        handleSubmit();
-      }
-    });
-  });
 };
 
 // Fallback HTML in case of API errors
