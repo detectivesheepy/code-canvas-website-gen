@@ -12,7 +12,7 @@ const Header = () => {
           <span className="font-bold text-xl">CodeCanvas</span>
         </div>
         <a 
-          href="https://github.com/detectivesheepy" 
+          href="https://github.com/detectivesheepy/code-canvas-website-gen" 
           target="_blank" 
           rel="noopener noreferrer"
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
